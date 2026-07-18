@@ -7,3 +7,31 @@ __pycache__/
 verif_debug.txt
 .DS_Store
 .venv
+tmp
+output
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
