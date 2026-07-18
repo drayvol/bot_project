@@ -1,0 +1,23 @@
+numpy
+scipy
+sympy
+pandas
+scikit-learn
+joblib
+google-genai
+qdrant-client
+requests
+
+# бот
+aiogram>=3.13
+rq>=1.16
+redis>=5
+matplotlib
+pillow
+pytest
+
+# rest api
+fastapi
+uvicorn
+python-multipart
+httpx

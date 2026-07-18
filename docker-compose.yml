@@ -1,0 +1,64 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  bot:
+    build: .
+    command: python -m bot.main
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATA_DIR: /data
+    volumes:
+      - ./storage:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST + дашборд http://localhost:6333/dashboard
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # масштабируется: docker compose up -d --scale worker=3
+  # (лимит 15 rpm Gemini держит общий счётчик в Redis — bot/ratelimit.py)
+  worker:
+    build: .
+    command: python -m worker.main
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      DATA_DIR: /data
+    volumes:
+      - ./storage:/data
+      - ./qdrant_db:/app/qdrant_db   # нужен только для migrate_qdrant.py
+    depends_on:
+      - redis
+      - qdrant
+    restart: unless-stopped
+
+  api:
+    build: .
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATA_DIR: /data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  qdrant_data:

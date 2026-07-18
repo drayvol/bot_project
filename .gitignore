@@ -1,0 +1,9 @@
+.env
+storage/
+qdrant_db/collection/
+__pycache__/
+*.pyc
+.pytest_cache/
+verif_debug.txt
+.DS_Store
+.venv
