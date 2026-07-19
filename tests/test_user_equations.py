@@ -7,8 +7,8 @@ import pytest
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 
-import user_equations as ue
-from build_equation_index import COLLECTION, normalize_equation
+import core.user_equations as ue
+from core.build_equation_index import COLLECTION, normalize_equation
 
 BASE_EQ = r'2\cos^2 x + 3\sin x - 3 = 0'
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

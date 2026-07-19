@@ -1,6 +1,16 @@
 __pycache__
 *.pyc
+.pytest_cache
 .env
 storage/
 qdrant_db/
 .git
+.idea
+.venv
+.DS_Store
+
+# материалы отчёта — не нужны в образе
+assets/
+output/
+tmp/
+project_description.md

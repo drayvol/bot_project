@@ -7,11 +7,8 @@
 ```bash
 cp .env.example .env   # вписать BOT_TOKEN и GOOGLE_API_KEY
 docker compose up -d --build
-docker compose run --rm worker python migrate_qdrant.py  # 1 раз: перенести готовую базу в qdrant
+docker compose run --rm worker python -m core.build_equation_index  # 1 раз: собрать векторную базу
 ```
-
-Если локальной `qdrant_db/` нет (свежий клон) — собрать базу сразу в сервис:
-`docker compose run --rm worker python build_equation_index.py`.
 
 Сервисы: `bot` (aiogram, long polling), `worker` (Grader: OCR → чекер → LLM),
 `api` (REST, порт 8000), `redis` (очередь RQ + FSM + rate-limit),
@@ -109,12 +106,10 @@ docker compose run --rm worker pytest tests/ # в контейнере
 
 ## Ядро (Grader)
 
-## Точка входа
-
-`grade_solution.py` → класс `Grader`:
+`core/grader.py` → класс `Grader`:
 
 ```python
-from grade_solution import Grader
+from core.grader import Grader
 grader = Grader()                          # ключи из окружения
 
 ocr = grader.recognize('photo.jpg')        # показать пользователю, дать исправить
@@ -126,34 +121,29 @@ similar = grader.similar_tasks(ocr['equation'], top_k=3)
 (условие противоречит шагам / уравнение не решается): показать распознанный
 текст и дать исправить ошибки сканирования перед оценкой.
 
-## Файлы
+Проверка одного фото из консоли: `python -m core.grader photo.jpg`
+(запускать из корня проекта — пути к моделям и базе относительные).
 
-| Файл | Роль |
+## Структура проекта
+
+| Путь | Роль |
 |---|---|
-| `grade_solution.py` | API для бота (Grader) |
-| `checker_v2.py` | формальный чекер: sympy + Wolfram, восстановление условия |
-| `pipeline.py` | OCR (дословная транскрипция) + FORMAL VERIFICATION (Gemma) |
-| `evaluate.py`, `evaluate_sympy.py` | извлечение балла, нормализация LaTeX |
-| `search_equations.py` | поиск похожих задач (Qdrant, косинусная близость) |
-| `build_equation_index.py` | пересборка векторной базы из data/*.jsonl |
+| `core/grader.py` | точка входа ядра: OCR → чекер → LLM-верификация |
+| `core/checker_v2.py` | формальный чекер: sympy + Wolfram, восстановление условия |
+| `core/pipeline.py` | OCR (дословная транскрипция) + FORMAL VERIFICATION (Gemma) |
+| `core/normalize.py`, `core/verdict.py` | нормализация LaTeX, извлечение балла из ответа LLM |
+| `core/search_equations.py` | поиск похожих задач (Qdrant, косинусная близость) |
+| `core/user_equations.py` | накопление присланных уравнений с дедупликацией |
+| `core/build_equation_index.py` | пересборка векторной базы из `data/*.jsonl` |
+| `bot/` | Telegram-бот: хендлеры, FSM правок OCR, рендер LaTeX→PNG, SQLite |
+| `worker/` | RQ-воркер: задачи recognize / grade / similar, доставка в чат |
+| `api/` | REST (FastAPI): POST/GET/PATCH заявок, Swagger на /docs |
+| `tests/` | pytest критических частей (42 теста) |
 | `models/` | логрег типа уравнения + векторизатор запросов |
-| `qdrant_db/` | готовая база ~470 уравнений с решениями (embedded) |
-| `data/` | исходник базы (jsonl) |
+| `data/` | исходник векторной базы (jsonl, ~470 уравнений с решениями) |
 
-## Запуск
-
-```bash
-pip install -r requirements.txt
-cp .env.example .env   # вписать ключи
-python grade_solution.py photo.jpg
-```
-
-Работать из корня папки (пути к моделям/базе относительные).
-В docker compose: ключи через env, qdrant можно вынести в отдельный
-сервис `qdrant/qdrant` (тогда в search_equations заменить
-`QdrantClient(path=...)` на `QdrantClient(url='http://qdrant:6333')`).
-
-Ограничение API Gemini: 15 запросов/мин — в коде уже есть ретраи и паузы.
+Ограничение API Gemini (15 запросов/мин) соблюдает общий лимитер
+в Redis (`bot/ratelimit.py`) + ретраи с паузами внутри ядра.
 
 ## Метрики
 

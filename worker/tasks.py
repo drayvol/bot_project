@@ -1,7 +1,7 @@
 """RQ-задачи: распознавание, оценка, похожие задачи.
 
 Выполняются в единственном воркере — это же и глобальный лимитер под
-15 запросов/мин Gemini. Qdrant embedded открывается только здесь.
+15 запросов/мин Gemma. Qdrant embedded открывается только здесь.
 """
 
 import logging
@@ -22,7 +22,7 @@ _grader = None
 def _get_grader():
     global _grader
     if _grader is None:
-        from grade_solution import Grader
+        from core.grader import Grader
         _grader = Grader()
     return _grader
 
@@ -91,7 +91,7 @@ def task_grade(sub_id: str):
 def _store_equation(sub: dict, result: dict):
     """Пополняет базу присланным уравнением (не критично — только логируем)."""
     try:
-        from user_equations import add_user_equation
+        from core.user_equations import add_user_equation
         status = add_user_equation(
             (sub['ocr'] or {}).get('equation', ''), sub['id'],
             {'answer': str((sub['ocr'] or {}).get('answer', '')),

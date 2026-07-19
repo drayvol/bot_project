@@ -1,6 +1,6 @@
 """Нормализация LaTeX и шагов перед чекером."""
 
-from evaluate_sympy import normalize_latex, normalize_steps
+from core.normalize import normalize_latex, normalize_steps
 
 
 def test_normalize_steps_dicts():

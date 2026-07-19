@@ -2,7 +2,7 @@
 
 import json
 
-from pipeline import _repair_json
+from core.pipeline import _repair_json
 
 
 def test_valid_json_untouched():

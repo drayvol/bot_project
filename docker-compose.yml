@@ -38,7 +38,6 @@ services:
       DATA_DIR: /data
     volumes:
       - ./storage:/data
-      - ./qdrant_db:/app/qdrant_db   # нужен только для migrate_qdrant.py
     depends_on:
       - redis
       - qdrant
